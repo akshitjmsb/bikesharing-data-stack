@@ -1,8 +1,22 @@
 -- models/staging/bixi/stg_station_status.sql
 
-with source as (
+with
 
-    select * 
+source as (
+
+    -- select all columns from the source table
+    select
+        station_id,
+        num_bikes_available,
+        num_ebikes_available,
+        num_bikes_disabled,
+        num_docks_available,
+        num_docks_disabled,
+        is_installed,
+        is_renting,
+        is_returning,
+        last_reported,
+        _airbyte_extracted_at
     from {{ source('raw', 'station_status') }}
 
 ),
@@ -10,29 +24,27 @@ with source as (
 renamed as (
 
     select
-        -- IDs
-        station_id::string                                               as station_id,
+        -- primary key
+        station_id::string as station_id,
 
-        -- Availability counts
-        num_bikes_available::int                                         as bikes_available,
-        num_docks_available::int                                         as docks_available,
-        num_bikes_disabled::int                                          as bikes_disabled,
-        num_docks_disabled::int                                          as docks_disabled,
-        num_ebikes_available::int                                        as ebikes_available,
+        -- station status metrics
+        num_bikes_available::integer as bikes_available,
+        num_ebikes_available::integer as ebikes_available,
+        num_bikes_disabled::integer as bikes_disabled,
+        num_docks_available::integer as docks_available,
+        num_docks_disabled::integer as docks_disabled,
 
-        -- Boolean flags (0 / 1 in raw → BOOLEAN here)
-        case when is_installed  = 1 then true else false end             as is_installed,
-        case when is_renting    = 1 then true else false end             as is_renting,
-        case when is_returning  = 1 then true else false end             as is_returning,
-        is_charging                                                  as is_charging,   -- already BOOLEAN
-        eightd_has_available_keys                                   as has_available_keys,
+        -- station status booleans
+        iff(is_installed = 1, true, false) as is_installed,
+        iff(is_renting = 1, true, false) as is_renting,
+        iff(is_returning = 1, true, false) as is_returning,
 
-        -- Timestamps
-        last_reported::int                                             as last_reported_epoch,
-        to_timestamp_ntz(last_reported::int)                           as last_reported_at,
-        _airbyte_extracted_at::timestamp_ntz                           as extracted_at
+        -- timestamps converted to Montreal's timezone
+        convert_timezone('UTC', 'America/Montreal', to_timestamp(last_reported::integer)) as last_reported_at,
+        convert_timezone('UTC', 'America/Montreal', _airbyte_extracted_at::timestamp_ntz) as extracted_at
 
     from source
+
 )
 
-select * from renamed;
+select * from renamed

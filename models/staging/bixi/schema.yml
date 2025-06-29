@@ -2,48 +2,112 @@ version: 2
 
 sources:
   - name: raw
-    description: "Raw layer synced from Airbyte"
+    description: "Raw layer synced from Airbyte for BIXI bike share data."
     tables:
       - name: station_information
-        description: "Raw station information from BIXI GBFS"
+        description: "Raw station information from BIXI GBFS."
       - name: station_status
-        description: "Raw station status from BIXI GBFS"
+        description: "Raw station status from BIXI GBFS."
 
 models:
   - name: stg_station_information
-    description: "Cleaned and renamed station information data"
+    description: "Intermediate model: Cleans and renames station information data. One row per station."
     columns:
       - name: station_id
-        description: "Unique identifier for the station"
+        description: "Unique identifier for the station."
+        tests:
+          - unique
+          - not_null
       - name: station_name
-        description: "Public display name of the station"
+        description: "Public display name of the station."
+      - name: station_short_name
+        description: "Short name or code for the station."
       - name: latitude
-        description: "Latitude of the station"
+        description: "Latitude of the station's location."
       - name: longitude
-        description: "Longitude of the station"
+        description: "Longitude of the station's location."
       - name: capacity
-        description: "Total bike capacity of the station"
+        description: "Total bike capacity of the station."
+      - name: has_kiosk
+        description: "Whether the station has a kiosk for transactions."
       - name: is_charging
-        description: "Whether the station supports charging e-bikes"
+        description: "Whether the station supports charging e-bikes."
+      - name: has_key_dispenser
+        description: "Whether the station has a key dispenser."
+      - name: has_electric_bike_waiver
+        description: "Whether the station waives electric bike surcharges."
       - name: extracted_at
-        description: "Timestamp of data extraction from source"
+        description: "Timestamp (America/Montreal) when the data was extracted from the source."
 
   - name: stg_station_status
-    description: "Cleaned and renamed station status data"
+    description: "Intermediate model: Cleans and renames station status data. Represents the latest state of each station."
     columns:
       - name: station_id
-        description: "Unique identifier for the station"
+        description: "Unique identifier for the station (foreign key to stg_station_information)."
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              to: ref('stg_station_information')
+              field: station_id
+      - name: bikes_available
+        description: "Number of mechanical bikes currently available for rent."
+      - name: ebikes_available
+        description: "Number of electric bikes currently available for rent."
+      - name: bikes_disabled
+        description: "Number of bikes at the station that are currently disabled."
+      - name: docks_available
+        description: "Number of empty docks available for returns."
+      - name: docks_disabled
+        description: "Number of docks at the station that are currently disabled."
       - name: is_installed
-        description: "Whether the station is currently installed"
+        description: "Whether the station is currently installed and operational."
       - name: is_renting
-        description: "Whether the station is currently renting bikes"
+        description: "Whether the station is currently allowing bike rentals."
       - name: is_returning
-        description: "Whether the station is currently accepting returns"
-      - name: num_bikes_available
-        description: "Number of bikes currently available"
-      - name: num_docks_available
-        description: "Number of docks currently available"
-      - name: last_reported
-        description: "Last time the station sent an update"
+        description: "Whether the station is currently accepting bike returns."
+      - name: last_reported_at
+        description: "Timestamp (America/Montreal) when the station last reported its status."
       - name: extracted_at
-        description: "Timestamp of data extraction from source"
+        description: "Timestamp (America/Montreal) when the data was extracted from the source."
+
+  - name: dim_stations
+    description: "Final dimensional model: Provides a complete, enriched view of each station's information and current status."
+    columns:
+      - name: station_id
+        description: "Unique identifier for the station."
+        tests:
+          - unique
+          - not_null
+      - name: station_name
+        description: "Public display name of the station."
+      - name: station_short_name
+        description: "Short name or code for the station."
+      - name: latitude
+        description: "Latitude of the station's location."
+      - name: longitude
+        description: "Longitude of the station's location."
+      - name: capacity
+        description: "Total bike capacity of the station."
+      - name: has_kiosk
+        description: "Whether the station has a kiosk for transactions."
+      - name: is_charging
+        description: "Whether the station supports charging e-bikes."
+      - name: bikes_available
+        description: "Number of mechanical and electric bikes currently available for rent."
+      - name: ebikes_available
+        description: "Number of electric bikes currently available for rent."
+      - name: bikes_disabled
+        description: "Number of bikes at the station that are currently disabled."
+      - name: docks_available
+        description: "Number of empty docks available for returns."
+      - name: is_installed
+        description: "Whether the station is currently installed and operational."
+      - name: is_renting
+        description: "Whether the station is currently allowing bike rentals."
+      - name: is_returning
+        description: "Whether the station is currently accepting bike returns."
+      - name: last_reported_at
+        description: "Timestamp (America/Montreal) when the station last reported its status."
+      - name: extracted_at
+        description: "Timestamp (America/Montreal) when the data was extracted from the source."

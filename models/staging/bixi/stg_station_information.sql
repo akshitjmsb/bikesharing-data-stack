@@ -1,8 +1,7 @@
 -- models/staging/bixi/stg_station_information.sql
 
 with source as (
-    select * 
-    from {{ source('raw', 'station_information') }}
+    select * from {{ source('raw', 'station_information') }}
 ),
 
 renamed as (
@@ -14,10 +13,13 @@ renamed as (
         lon::float as longitude,
         capacity::int as capacity,
         has_kiosk::boolean as has_kiosk,
-        is_charging::boolean as is_charging,
+        iff(is_charging = 1, true, false) as is_charging, -- Added IFF for safety
         eightd_has_key_dispenser::boolean as has_key_dispenser,
         electric_bike_surcharge_waiver::boolean as has_electric_bike_waiver,
-        _airbyte_extracted_at::timestamp_ntz as extracted_at
+        
+        -- UPDATED: Convert timestamp to Montreal's timezone
+        convert_timezone('UTC', 'America/Montreal', _airbyte_extracted_at::timestamp_ntz) as extracted_at
+        
     from source
 )
 
