@@ -1,0 +1,49 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Raw layer synced from Airbyte"
+    tables:
+      - name: station_information
+        description: "Raw station information from BIXI GBFS"
+      - name: station_status
+        description: "Raw station status from BIXI GBFS"
+
+models:
+  - name: stg_station_information
+    description: "Cleaned and renamed station information data"
+    columns:
+      - name: station_id
+        description: "Unique identifier for the station"
+      - name: station_name
+        description: "Public display name of the station"
+      - name: latitude
+        description: "Latitude of the station"
+      - name: longitude
+        description: "Longitude of the station"
+      - name: capacity
+        description: "Total bike capacity of the station"
+      - name: is_charging
+        description: "Whether the station supports charging e-bikes"
+      - name: extracted_at
+        description: "Timestamp of data extraction from source"
+
+  - name: stg_station_status
+    description: "Cleaned and renamed station status data"
+    columns:
+      - name: station_id
+        description: "Unique identifier for the station"
+      - name: is_installed
+        description: "Whether the station is currently installed"
+      - name: is_renting
+        description: "Whether the station is currently renting bikes"
+      - name: is_returning
+        description: "Whether the station is currently accepting returns"
+      - name: num_bikes_available
+        description: "Number of bikes currently available"
+      - name: num_docks_available
+        description: "Number of docks currently available"
+      - name: last_reported
+        description: "Last time the station sent an update"
+      - name: extracted_at
+        description: "Timestamp of data extraction from source"
